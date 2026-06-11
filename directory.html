@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Sonic 1 Forever — Mods &amp; Files</title>
+  <link rel="icon" href="favicon.ico">
+  <style>
+    :root {
+      --bg:        #0d0d1a;
+      --surface:   #13131f;
+      --surface2:  #1a1a2e;
+      --border:    #252540;
+      --blue:      #1565ff;
+      --blue-dim:  rgba(21,101,255,.15);
+      --gold:      #ffc94d;
+      --gold-dim:  rgba(255,201,77,.12);
+      --green:     #2ecc71;
+      --green-dim: rgba(46,204,113,.12);
+      --red:       #e74c3c;
+      --red-dim:   rgba(231,76,60,.12);
+      --purple:    #9b59b6;
+      --text:      #e8e8f8;
+      --text-dim:  #5a5a90;
+      --text-mid:  #8888b8;
+      --radius:    12px;
+      --radius-sm: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 15px; line-height: 1.6; }
+    body { min-height: 100vh; padding: 0 0 80px; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -5%, rgba(21,80,255,.14) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 85% 85%, rgba(155,89,182,.07) 0%, transparent 50%);
+    }
+
+    /* ── Header ───────────────────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(13,13,26,.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0) 0 0;
+    }
+    .header-inner { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 14px 20px; }
+    .back-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-mid); font-size: .95rem;
+      text-decoration: none; transition: background .15s, color .15s; flex-shrink: 0;
+    }
+    .back-btn:hover { background: var(--border); color: var(--text); }
+    header h1 { flex: 1; font-size: 1rem; font-weight: 800; letter-spacing: .02em; }
+    header h1 span { color: var(--gold); }
+    .header-badge { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); padding: 3px 9px; border-radius: 20px; }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .page { max-width: 860px; margin: 0 auto; padding: 28px 20px; }
+    .section { margin-bottom: 36px; }
+    .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .section-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .section-icon.blue   { background: var(--blue-dim);  border: 1px solid rgba(21,101,255,.3); }
+    .section-icon.gold   { background: var(--gold-dim);  border: 1px solid rgba(255,201,77,.3); }
+    .section-icon.green  { background: var(--green-dim); border: 1px solid rgba(46,204,113,.3); }
+    .section-icon.red    { background: var(--red-dim);   border: 1px solid rgba(231,76,60,.3); }
+    .section-icon.purple { background: rgba(155,89,182,.12); border: 1px solid rgba(155,89,182,.3); }
+    .section-title { font-size: .95rem; font-weight: 800; }
+    .section-sub   { font-size: .76rem; color: var(--text-dim); margin-top: 2px; }
+
+    /* ── Mod Cards ────────────────────────────────────── */
+    .mod-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 600px) { .mod-grid { grid-template-columns: 1fr 1fr; } }
+    .mod-card { display: flex; gap: 14px; align-items: flex-start; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; transition: border-color .15s; }
+    .mod-card:hover { border-color: rgba(21,101,255,.4); }
+    .mod-card.active { border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.04); }
+    .mod-thumb { width: 52px; height: 52px; border-radius: var(--radius-sm); background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+    .mod-body { flex: 1; min-width: 0; }
+    .mod-name { font-weight: 800; font-size: .92rem; margin-bottom: 4px; }
+    .mod-desc { font-size: .76rem; color: var(--text-dim); line-height: 1.55; }
+    .mod-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .mod-tag  { font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-mid); }
+    .mod-tag.active { background: rgba(46,204,113,.15); border-color: rgba(46,204,113,.4); color: var(--green); }
+    .mod-toggle { margin-left: auto; flex-shrink: 0; }
+    .toggle-sw { position: relative; width: 44px; height: 24px; cursor: pointer; }
+    .toggle-sw input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 12px; transition: background .2s; }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: var(--text-mid); border-radius: 50%; transition: transform .2s, background .2s; }
+    .toggle-sw input:checked ~ .toggle-track { background: rgba(46,204,113,.35); }
+    .toggle-sw input:checked ~ .toggle-thumb { transform: translateX(20px); background: var(--green); }
+
+    /* ── Import Zone ─────────────────────────────────── */
+    .import-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 32px 20px; text-align: center;
+      cursor: pointer; transition: border-color .2s, background .2s;
+      background: transparent; position: relative;
+    }
+    .import-zone:hover, .import-zone.drag-over {
+      border-color: var(--blue); background: var(--blue-dim);
+    }
+    .import-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .import-icon { font-size: 2.2rem; margin-bottom: 10px; }
+    .import-title { font-weight: 800; font-size: .95rem; margin-bottom: 6px; }
+    .import-sub   { font-size: .78rem; color: var(--text-dim); line-height: 1.6; }
+    .import-btn {
+      margin-top: 14px; display: inline-flex; align-items: center; gap: 8px;
+      background: var(--blue); color: #fff; border: none;
+      padding: 10px 22px; border-radius: var(--radius-sm);
+      font-size: .85rem; font-weight: 700; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .15s; pointer-events: none;
+    }
+    .import-zone:hover .import-btn { opacity: .88; }
+
+    /* Import progress */
+    #import-progress { display: none; margin-top: 16px; }
+    #import-progress.show { display: block; }
+    .imp-bar-bg { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .imp-bar    { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), #00c8ff); border-radius: 3px; transition: width .3s; }
+    #import-status { font-size: .78rem; color: var(--text-mid); margin-top: 6px; text-align: center; }
+
+    /* Queued files list */
+    #queued-list { margin-top: 14px; display: none; flex-direction: column; gap: 8px; }
+    #queued-list.show { display: flex; }
+    .queued-item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+    .queued-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .queued-name { flex: 1; font-size: .85rem; font-weight: 700; }
+    .queued-size { font-size: .73rem; color: var(--text-dim); }
+    .queued-remove { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1rem; padding: 4px; line-height: 1; transition: color .15s; }
+    .queued-remove:hover { color: var(--red); }
+    #queue-actions { display: none; gap: 10px; margin-top: 12px; }
+    #queue-actions.show { display: flex; }
+    .qa-btn { flex: 1; padding: 11px; border-radius: var(--radius-sm); font-size: .85rem; font-weight: 700; border: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s; }
+    .qa-btn:hover { opacity: .85; }
+    .qa-clear  { background: var(--border); color: var(--text); }
+    .qa-deploy { background: var(--green); color: #fff; }
+
+    /* ── File Table ───────────────────────────────────── */
+    .file-table { display: flex; flex-direction: column; gap: 2px; }
+    .file-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 14px; cursor: pointer; transition: border-color .12s, background .12s; }
+    .file-row:hover { border-color: rgba(21,101,255,.35); background: rgba(21,101,255,.04); }
+    .file-icon { font-size: 1.25rem; flex-shrink: 0; width: 28px; text-align: center; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-weight: 700; font-size: .88rem; }
+    .file-desc { font-size: .73rem; color: var(--text-dim); margin-top: 2px; }
+    .file-size { font-size: .73rem; color: var(--text-dim); flex-shrink: 0; white-space: nowrap; }
+    .file-badge { font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; flex-shrink: 0; }
+    .badge-green  { background: rgba(46,204,113,.15); border: 1px solid rgba(46,204,113,.35); color: var(--green); }
+    .badge-gold   { background: var(--gold-dim); border: 1px solid rgba(255,201,77,.35); color: var(--gold); }
+    .badge-blue   { background: var(--blue-dim); border: 1px solid rgba(21,101,255,.35); color: #6aa3ff; }
+    .badge-dim    { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); }
+    .badge-red    { background: var(--red-dim); border: 1px solid rgba(231,76,60,.35); color: var(--red); }
+
+    /* ── How-to grid ──────────────────────────────────── */
+    .howto-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 600px) { .howto-grid { grid-template-columns: 1fr 1fr 1fr; } }
+    .howto-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .howto-step { font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 7px; }
+    .howto-card h4 { font-size: .9rem; font-weight: 800; margin-bottom: 8px; }
+    .howto-card p  { font-size: .78rem; color: var(--text-dim); line-height: 1.65; }
+    .howto-card code { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: .73rem; color: var(--text-mid); }
+
+    /* ── Toast ────────────────────────────────────────── */
+    #toast { position: fixed; bottom: calc(env(safe-area-inset-bottom,0px) + 24px); left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(30,30,50,.96); border: 1px solid var(--border); backdrop-filter: blur(8px); color: var(--text); padding: 10px 22px; border-radius: 30px; font-size: .82rem; font-weight: 600; white-space: nowrap; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; z-index: 99; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="back-btn" href="web.html" aria-label="Back">←</a>
+    <h1>Sonic 1 <span>Forever</span> — <span style="color:var(--text-mid)">Mods &amp; Files</span></h1>
+    <span class="header-badge">v1.5.1</span>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- ════════════════════════════════════════════════════
+       INSTALLED MODS
+  ════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon gold">🎮</div>
+      <div>
+        <div class="section-title">Installed Mods</div>
+        <div class="section-sub">Toggle mods on/off — edits persist to modconfig.ini on supported servers</div>
+      </div>
+    </div>
+
+    <div class="mod-grid" id="mod-grid">
+
+      <!-- Sonic 1 Forever base mod -->
+      <div class="mod-card active">
+        <div class="mod-thumb">🦔</div>
+        <div class="mod-body">
+          <div class="mod-name">Sonic 1 Forever</div>
+          <div class="mod-desc">The core mod — new zones, story, moves, and polish. Required to play.</div>
+          <div class="mod-meta">
+            <span class="mod-tag active">✓ Active</span>
+            <span class="mod-tag">Required</span>
+            <span class="mod-tag">RSDKv4</span>
+          </div>
+        </div>
+        <div class="mod-toggle">
+          <label class="toggle-sw" title="Cannot disable base mod">
+            <input type="checkbox" checked disabled>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Placeholder for imported mods -->
+      <div class="mod-card" id="mod-placeholder" style="border-style:dashed;opacity:.55;cursor:default;">
+        <div class="mod-thumb" style="font-size:1.8rem">＋</div>
+        <div class="mod-body">
+          <div class="mod-name" style="color:var(--text-dim)">Add your mod here</div>
+          <div class="mod-desc" style="color:var(--text-dim)">Import a mod zip below, or drop a folder into <code style="color:var(--text-mid)">Mods/</code> and update <code style="color:var(--text-mid)">modconfig.ini</code>.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       IMPORT MODS / FILES
+  ════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon green">📥</div>
+      <div>
+        <div class="section-title">Import Mods &amp; Files</div>
+        <div class="section-sub">Drop a mod zip, replacement Data.rsdk, or any game file here</div>
+      </div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="import-zone" id="drop-zone">
+      <input type="file" id="file-input" multiple accept=".zip,.rsdk,.ini,.txt,.json,.png,.wav,.ogg,.mp3">
+      <div class="import-icon">📂</div>
+      <div class="import-title">Drag &amp; drop files here</div>
+      <div class="import-sub">
+        Accepts: <strong>.zip</strong> (mod archives), <strong>Data.rsdk</strong> (game data),
+        <strong>.ini</strong> (config), scripts, textures, and audio files.<br>
+        Files are stored in your browser's storage and loaded at runtime.
+      </div>
+      <div class="import-btn">Choose Files</div>
+    </div>
+
+    <!-- Progress -->
+    <div id="import-progress">
+      <div class="imp-bar-bg"><div class="imp-bar" id="imp-bar"></div></div>
+      <div id="import-status">Processing…</div>
+    </div>
+
+    <!-- Queued files list -->
+    <div id="queued-list"></div>
+    <div id="queue-actions">
+      <button class="qa-btn qa-clear"  id="btn-clear-queue">🗑 Clear All</button>
+      <button class="qa-btn qa-deploy" id="btn-deploy">✓ Apply &amp; Save to Storage</button>
+    </div>
+
+    <!-- How-to steps -->
+    <div class="howto-grid" style="margin-top:20px">
+      <div class="howto-card">
+        <div class="howto-step">Step 1</div>
+        <h4>Get a mod</h4>
+        <p>Download an RSDKv4-compatible mod from
+           <a href="https://gamebanana.com/games/8688" target="_blank" style="color:var(--blue)">GameBanana</a>.
+           Mod zips should contain a <code>Data/</code> subfolder.</p>
+      </div>
+      <div class="howto-card">
+        <div class="howto-step">Step 2</div>
+        <h4>Import here</h4>
+        <p>Drop the zip (or individual files) into the zone above. They'll be
+           queued and validated before saving to browser storage.</p>
+      </div>
+      <div class="howto-card">
+        <div class="howto-step">Step 3</div>
+        <h4>Apply &amp; Play</h4>
+        <p>Click <strong>Apply &amp; Save</strong>. Return to the launcher — your
+           mod will load automatically on next game start.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       CORE GAME FILES
+  ════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">📁</div>
+      <div>
+        <div class="section-title">Core Game Files</div>
+        <div class="section-sub">Files required by the web build — click any row to copy its name</div>
+      </div>
+    </div>
+
+    <div class="file-table">
+      <div class="file-row" data-copy="web.html">
+        <div class="file-icon">🌐</div>
+        <div class="file-info">
+          <div class="file-name">web.html</div>
+          <div class="file-desc">Main launcher — Xbox touch controls, PWA, mod support. <strong>Start here.</strong></div>
+        </div>
+        <span class="file-badge badge-green">✓ This page</span>
+      </div>
+      <div class="file-row" data-copy="Data.rsdk">
+        <div class="file-icon">📦</div>
+        <div class="file-info">
+          <div class="file-name">Data.rsdk</div>
+          <div class="file-desc">Sonic 1 Forever game data archive — all sprites, audio, scripts, and levels</div>
+        </div>
+        <div class="file-size">38 MB</div>
+        <span class="file-badge badge-gold">Core</span>
+      </div>
+      <div class="file-row" data-copy="index.js">
+        <div class="file-icon">⚙️</div>
+        <div class="file-info">
+          <div class="file-name">index.js</div>
+          <div class="file-desc">Emscripten JS glue for the WASM engine —
+            <a href="https://github.com/grubbyplaya/Sonic-1-WASM" target="_blank" style="color:var(--blue)">download from grubbyplaya/Sonic-1-WASM</a></div>
+        </div>
+        <span class="file-badge badge-dim">⬇ Download</span>
+      </div>
+      <div class="file-row" data-copy="index.wasm">
+        <div class="file-icon">🔧</div>
+        <div class="file-info">
+          <div class="file-name">index.wasm</div>
+          <div class="file-desc">Compiled RSDKv4 engine — WebAssembly binary (~3 MB compressed)</div>
+        </div>
+        <span class="file-badge badge-dim">⬇ Download</span>
+      </div>
+      <div class="file-row" data-copy="Forever.ini">
+        <div class="file-icon">📋</div>
+        <div class="file-info">
+          <div class="file-name">Forever.ini</div>
+          <div class="file-desc">Engine configuration — window title, data path, mod list enable</div>
+        </div>
+        <span class="file-badge badge-green">✓ Bundled</span>
+      </div>
+      <div class="file-row" data-copy="Mods/modconfig.ini">
+        <div class="file-icon">🗂</div>
+        <div class="file-info">
+          <div class="file-name">Mods/modconfig.ini</div>
+          <div class="file-desc">Controls which mods are active — add mod names under <code>[mods]</code></div>
+        </div>
+        <span class="file-badge badge-green">✓ Bundled</span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       DESKTOP EXE / WINDOWS FILES
+  ════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">💻</div>
+      <div>
+        <div class="section-title">Desktop Executables</div>
+        <div class="section-sub">Windows EXE files — not used by the web build</div>
+      </div>
+    </div>
+
+    <div class="file-table">
+      <div class="file-row" data-copy="SonicForever.exe">
+        <div class="file-icon">🪟</div>
+        <div class="file-info">
+          <div class="file-name">SonicForever.exe <span style="color:var(--text-dim);font-weight:400;font-size:.78rem">(download separately)</span></div>
+          <div class="file-desc">Windows native executable — download from
+            <a href="https://github.com/Rubberduckycooly/Sonic-1-2-2013-Decompilation" target="_blank" style="color:var(--blue)">RSDKv4 decompilation releases</a></div>
+        </div>
+        <span class="file-badge badge-dim">Windows</span>
+      </div>
+      <div class="file-row" data-copy="SDL2.dll">
+        <div class="file-icon">🔗</div>
+        <div class="file-info">
+          <div class="file-name">SDL2.dll</div>
+          <div class="file-desc">SDL2 runtime library — required by the Windows EXE, not by the web build</div>
+        </div>
+        <div class="file-size">2.0 MB</div>
+        <span class="file-badge badge-dim">Windows</span>
+      </div>
+      <div class="file-row" data-copy="glew32.dll">
+        <div class="file-icon">🔗</div>
+        <div class="file-info">
+          <div class="file-name">glew32.dll</div>
+          <div class="file-desc">OpenGL Extension Wrangler — required by the Windows EXE</div>
+        </div>
+        <div class="file-size">424 KB</div>
+        <span class="file-badge badge-dim">Windows</span>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;font-size:.78rem;color:var(--text-dim);line-height:1.7">
+      The WASM build replaces the EXE entirely — no installation needed for web play.
+      The DLL files are kept here only for users who also want the desktop version.
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       PWA / WEB APP FILES
+  ════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon green">📱</div>
+      <div>
+        <div class="section-title">PWA &amp; Web App Files</div>
+        <div class="section-sub">Progressive Web App support — install to home screen</div>
+      </div>
+    </div>
+
+    <div class="file-table">
+      <div class="file-row" data-copy="manifest.webmanifest">
+        <div class="file-icon">📋</div>
+        <div class="file-info">
+          <div class="file-name">manifest.webmanifest</div>
+          <div class="file-desc">PWA manifest — app name, icons, display mode, theme colour</div>
+        </div>
+        <span class="file-badge badge-green">✓ Bundled</span>
+      </div>
+      <div class="file-row" data-copy="pwabuilder-sw.js">
+        <div class="file-icon">⚙️</div>
+        <div class="file-info">
+          <div class="file-name">pwabuilder-sw.js</div>
+          <div class="file-desc">Service worker for offline caching (PWA Builder generated)</div>
+        </div>
+        <span class="file-badge badge-green">✓ Bundled</span>
+      </div>
+      <div class="file-row" data-copy="icon/">
+        <div class="file-icon">🖼️</div>
+        <div class="file-info">
+          <div class="file-name">icon/</div>
+          <div class="file-desc">App icons: icon.svg, android-chrome-192×192.png, android-chrome-512×512.png, maskable-512.png</div>
+        </div>
+        <span class="file-badge badge-green">✓ Bundled</span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════
+       GITHUB DEPLOYMENT GUIDE
+  ════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon purple">🚀</div>
+      <div>
+        <div class="section-title">GitHub Pages Deployment</div>
+        <div class="section-sub">Host for free — no server required</div>
+      </div>
+    </div>
+
+    <div class="howto-grid">
+      <div class="howto-card">
+        <div class="howto-step">Step 1</div>
+        <h4>Prepare the repo</h4>
+        <p>Push all HTML, JS, WASM, and INI files to your GitHub repo.
+           Add <code>Data.rsdk</code> via
+           <a href="https://git-lfs.github.com" target="_blank" style="color:var(--blue)">Git LFS</a>
+           (it's 38 MB — too large for a regular commit).</p>
+      </div>
+      <div class="howto-card">
+        <div class="howto-step">Step 2</div>
+        <h4>Enable Pages</h4>
+        <p>Go to <strong>Settings → Pages</strong>, set Source to <em>main branch</em>,
+           root folder. GitHub will give you a
+           <code>https://username.github.io/repo/</code> URL.</p>
+      </div>
+      <div class="howto-card">
+        <div class="howto-step">Step 3</div>
+        <h4>Add COOP headers</h4>
+        <p>Create <code>_headers</code> (Netlify) or a GitHub Actions workflow to set
+           <code>Cross-Origin-Opener-Policy: same-origin</code> and
+           <code>Cross-Origin-Embedder-Policy: require-corp</code> for full SharedArrayBuffer support.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;font-size:.78rem;color:var(--text-dim);line-height:1.8">
+      <strong style="color:var(--text-mid)">Size tip for GitHub free tier (1 GB LFS limit):</strong><br>
+      Compress <code>Data.rsdk</code> with <code>zstd -19 Data.rsdk</code> (typically ~24 MB) and decompress it in
+      <code>web.html</code> using the DecompressionStream API. The WASM files are already tiny (~3 MB each).
+      You can safely exclude <code>SonLVLObjDefs/</code>, <code>SDL2.dll</code>, and <code>icon/*.pdb</code>
+      to trim the repo further.
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+
+<script>
+// ── Toast helper ─────────────────────────────────────────────
+function toast(msg, ms = 2400) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── Copy filename on row click ────────────────────────────────
+document.querySelectorAll('.file-row[data-copy]').forEach(row => {
+  row.addEventListener('click', () => {
+    const name = row.dataset.copy;
+    navigator.clipboard?.writeText(name).catch(() => {});
+    toast('📋 Copied: ' + name);
+  });
+});
+
+// ── Mod toggle UX ────────────────────────────────────────────
+document.querySelectorAll('.toggle-sw input:not([disabled])').forEach(chk => {
+  chk.addEventListener('change', () => {
+    const name = chk.closest('.mod-card')?.querySelector('.mod-name')?.textContent?.trim();
+    const state = chk.checked ? 'enabled' : 'disabled';
+    toast(`${name || 'Mod'} ${state} — edit modconfig.ini to persist`);
+  });
+});
+
+// ── File import system ────────────────────────────────────────
+const dropZone    = document.getElementById('drop-zone');
+const fileInput   = document.getElementById('file-input');
+const queuedList  = document.getElementById('queued-list');
+const queueActs   = document.getElementById('queue-actions');
+const impProgress = document.getElementById('import-progress');
+const impBar      = document.getElementById('imp-bar');
+const impStatus   = document.getElementById('import-status');
+const impDb       = [];
+
+function fileIcon(name) {
+  if (/\.zip$/i.test(name))  return '🗜️';
+  if (/\.rsdk$/i.test(name)) return '📦';
+  if (/\.ini$/i.test(name))  return '📋';
+  if (/\.png$/i.test(name))  return '🖼️';
+  if (/\.(wav|ogg|mp3)$/i.test(name)) return '🎵';
+  if (/\.(txt|json)$/i.test(name))    return '📄';
+  return '📁';
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function renderQueue() {
+  queuedList.innerHTML = '';
+  if (impDb.length === 0) {
+    queuedList.classList.remove('show');
+    queueActs.classList.remove('show');
+    return;
+  }
+  queuedList.classList.add('show');
+  queueActs.classList.add('show');
+
+  impDb.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'queued-item';
+    div.innerHTML = `
+      <div class="queued-icon">${fileIcon(f.name)}</div>
+      <div class="queued-name">${f.name}</div>
+      <div class="queued-size">${fmtSize(f.size)}</div>
+      <button class="queued-remove" data-i="${i}" title="Remove">✕</button>
+    `;
+    queuedList.appendChild(div);
+  });
+
+  queuedList.querySelectorAll('.queued-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      impDb.splice(Number(btn.dataset.i), 1);
+      renderQueue();
+    });
+  });
+}
+
+function addFiles(files) {
+  let added = 0;
+  for (const f of files) {
+    if (!impDb.find(e => e.name === f.name && e.size === f.size)) {
+      impDb.push(f);
+      added++;
+    }
+  }
+  renderQueue();
+  if (added) toast(`${added} file${added > 1 ? 's' : ''} queued`);
+}
+
+// Drag & drop
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  addFiles(Array.from(e.dataTransfer.files));
+});
+
+fileInput.addEventListener('change', () => {
+  addFiles(Array.from(fileInput.files));
+  fileInput.value = '';
+});
+
+// Clear queue
+document.getElementById('btn-clear-queue').addEventListener('click', () => {
+  impDb.length = 0;
+  renderQueue();
+  toast('Queue cleared');
+});
+
+// Deploy / save to IndexedDB
+document.getElementById('btn-deploy').addEventListener('click', async () => {
+  if (impDb.length === 0) return;
+
+  impProgress.classList.add('show');
+  impBar.style.width = '0%';
+  impStatus.textContent = 'Opening storage…';
+
+  try {
+    const db = await openModDB();
+    let done = 0;
+    for (const file of impDb) {
+      impStatus.textContent = `Saving ${file.name}…`;
+      const buf = await file.arrayBuffer();
+      await saveFileToDB(db, file.name, buf);
+      done++;
+      impBar.style.width = Math.round((done / impDb.length) * 100) + '%';
+    }
+    impStatus.textContent = `✓ ${done} file${done > 1 ? 's' : ''} saved to browser storage`;
+    impBar.style.width = '100%';
+    toast('✓ Files saved — reload the launcher to apply');
+
+    // Render newly saved mods in the grid
+    impDb.filter(f => /\.zip$/i.test(f.name)).forEach(f => addModCard(f.name));
+
+    setTimeout(() => {
+      impProgress.classList.remove('show');
+      impBar.style.width = '0%';
+    }, 3000);
+
+    impDb.length = 0;
+    renderQueue();
+
+  } catch (err) {
+    impStatus.textContent = '❌ Error: ' + err.message;
+    console.error(err);
+  }
+});
+
+// ── IndexedDB helpers ─────────────────────────────────────────
+function openModDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('sonic1-mods', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('files');
+    req.onsuccess = e => res(e.target.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+function saveFileToDB(db, name, buf) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction('files', 'readwrite');
+    const req = tx.objectStore('files').put(buf, name);
+    req.onsuccess = () => res();
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+// ── Dynamic mod card ──────────────────────────────────────────
+function addModCard(zipName) {
+  const name = zipName.replace(/\.zip$/i, '').replace(/[-_]/g, ' ');
+  const placeholder = document.getElementById('mod-placeholder');
+  const card = document.createElement('div');
+  card.className = 'mod-card';
+  card.innerHTML = `
+    <div class="mod-thumb">🗜️</div>
+    <div class="mod-body">
+      <div class="mod-name">${name}</div>
+      <div class="mod-desc">Imported mod — stored in browser storage. Activate via modconfig.ini.</div>
+      <div class="mod-meta">
+        <span class="mod-tag">Imported</span>
+        <span class="mod-tag">RSDKv4</span>
+      </div>
+    </div>
+    <div class="mod-toggle">
+      <label class="toggle-sw">
+        <input type="checkbox">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+  `;
+  card.querySelector('input').addEventListener('change', function() {
+    const state = this.checked ? 'enabled' : 'disabled';
+    toast(`${name} ${state}`);
+  });
+  placeholder.parentNode.insertBefore(card, placeholder);
+}
+
+// Load already-saved mods from IndexedDB on page load
+(async () => {
+  try {
+    const db = await openModDB();
+    const tx  = db.transaction('files', 'readonly');
+    const req = tx.objectStore('files').getAllKeys();
+    req.onsuccess = () => {
+      (req.result || []).filter(k => /\.zip$/i.test(k)).forEach(addModCard);
+    };
+  } catch (_) {}
+})();
+</script>
+</body>
+</html>

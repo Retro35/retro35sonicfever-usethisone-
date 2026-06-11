@@ -1,0 +1,17 @@
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: cross-origin
+
+# Cache static assets aggressively, HTML loosely
+/index.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/index.wasm
+  Cache-Control: public, max-age=31536000, immutable
+
+/Data.rsdk
+  Cache-Control: public, max-age=2592000
+
+/*.html
+  Cache-Control: public, max-age=3600, must-revalidate

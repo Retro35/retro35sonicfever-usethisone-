@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="initial-scale=1, viewport-fit=cover, width=device-width, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d1a">
+  <title>Sonic 1 Forever — Web</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    /* ── Design tokens ─────────────────────────────────── */
+    :root {
+      --bg:         #0d0d1a;
+      --surface:    #13131f;
+      --surface2:   #1a1a2e;
+      --border:     #252540;
+      --blue:       #1565ff;
+      --blue-glow:  rgba(21,101,255,.4);
+      --gold:       #ffc94d;
+      --gold-dim:   rgba(255,201,77,.15);
+      --green:      #2ecc71;
+      --red:        #e74c3c;
+      --text:       #e8e8f8;
+      --text-dim:   #6060a0;
+      --text-mid:   #9090c0;
+      --radius:     12px;
+      --radius-sm:  8px;
+      --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
+
+      /* Xbox button colours */
+      --xbox-a:   #2d7a2d;
+      --xbox-b:   #8b1a1a;
+      --xbox-x:   #1a3a7a;
+      --xbox-y:   #7a6a10;
+      --xbox-lt:  rgba(50,50,80,.72);
+      --xbox-rt:  rgba(50,50,80,.72);
+      --xbox-sb:  rgba(30,30,60,.72);
+      --xbox-guide: rgba(255,255,255,.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    /* ── Starfield background ───────────────────────────── */
+    #stars {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 100% 60% at 50% -10%, rgba(21,80,255,.18) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 90% 90%,  rgba(255,170,20,.07) 0%, transparent 55%),
+        radial-gradient(ellipse 30% 20% at 10% 70%,  rgba(21,101,255,.06) 0%, transparent 50%);
+    }
+
+    /* ── Splash screen ──────────────────────────────────── */
+    #splash {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: 32px 20px max(env(safe-area-inset-bottom), 28px);
+      overflow-y: auto; overflow-x: hidden;
+    }
+    #splash.hidden { display: none; }
+
+    /* ── Hero ───────────────────────────────────────────── */
+    .hero { text-align: center; margin-bottom: 32px; padding-top: env(safe-area-inset-top, 0px); }
+    .ring-wrap {
+      width: 110px; height: 110px; margin: 0 auto 20px;
+      position: relative; animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .ring-outer {
+      width:100%;height:100%;border-radius:50%;
+      background:conic-gradient(from 200deg,#ffa800,#ffd740,#fff8a0,#ffc94d,#ff8800,#ffa800);
+      box-shadow:0 0 50px rgba(255,185,50,.55),0 0 100px rgba(255,120,0,.25);
+      display:flex;align-items:center;justify-content:center;
+      animation:ring-spin 18s linear infinite,glow-pulse 3.5s ease-in-out infinite;
+    }
+    @keyframes ring-spin  { to{filter:hue-rotate(30deg)} }
+    @keyframes glow-pulse {
+      0%,100%{box-shadow:0 0 50px rgba(255,185,50,.55),0 0 100px rgba(255,120,0,.25)}
+      50%    {box-shadow:0 0 70px rgba(255,205,70,.75),0 0 130px rgba(255,140,0,.4)}
+    }
+    .ring-inner { width:60%;height:60%;border-radius:50%;background:var(--bg);box-shadow:inset 0 3px 10px rgba(0,0,0,.8); }
+    .hero-title { font-size:clamp(1.6rem,7vw,2.5rem);font-weight:900;letter-spacing:-.03em;line-height:1.1; }
+    .hero-title .accent { color:var(--gold); }
+    .hero-sub { margin-top:7px;font-size:.78rem;color:var(--text-dim);letter-spacing:.14em;text-transform:uppercase;font-weight:600; }
+
+    /* ── Card ───────────────────────────────────────────── */
+    .card { width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px; }
+    .card-label { font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:13px; }
+
+    /* ── Data status ─────────────────────────────────────── */
+    .data-status { display:flex;align-items:center;gap:14px;background:rgba(46,204,113,.07);border:1.5px solid rgba(46,204,113,.25);border-radius:var(--radius-sm);padding:13px 15px; }
+    .data-icon { font-size:1.7rem;flex-shrink:0;line-height:1; }
+    .data-name { font-weight:700;color:var(--green);font-size:.92rem; }
+    .data-meta { font-size:.75rem;color:var(--text-dim);margin-top:2px; }
+
+    /* ── Progress ────────────────────────────────────────── */
+    #prog-wrap { width:100%;max-width:460px;display:none;flex-direction:column;gap:8px;margin-bottom:12px; }
+    #prog-wrap.show { display:flex; }
+    #prog-label { font-size:.8rem;color:var(--text-mid);text-align:center; }
+    #prog-track { height:5px;background:var(--border);border-radius:3px;overflow:hidden; }
+    #prog-fill  { height:100%;width:0%;background:linear-gradient(90deg,var(--blue),#00c8ff);border-radius:3px;transition:width .3s ease; }
+
+    /* ── Error ───────────────────────────────────────────── */
+    #error-msg { width:100%;max-width:460px;font-size:.8rem;color:var(--red);text-align:center;min-height:20px;margin-bottom:6px; }
+
+    /* ── Launch button ───────────────────────────────────── */
+    #launch-btn {
+      width:100%;max-width:460px;padding:16px;
+      background:var(--blue);color:#fff;
+      font-size:1rem;font-weight:800;letter-spacing:.05em;
+      border:none;border-radius:var(--radius);cursor:pointer;
+      box-shadow:0 6px 28px var(--blue-glow);
+      transition:opacity .18s,transform .1s,box-shadow .18s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    #launch-btn:not(:disabled):hover  { opacity:.88;box-shadow:0 8px 36px var(--blue-glow); }
+    #launch-btn:not(:disabled):active { transform:scale(.975); }
+    #launch-btn:disabled { opacity:.3;cursor:not-allowed;box-shadow:none; }
+
+    /* ── Nav pills ───────────────────────────────────────── */
+    .nav-pills { width:100%;max-width:460px;display:flex;gap:8px;margin-bottom:12px; }
+    .nav-pill {
+      flex:1;padding:10px 8px;background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius-sm);color:var(--text-mid);
+      font-size:.78rem;font-weight:700;letter-spacing:.04em;text-align:center;
+      text-decoration:none;cursor:pointer;
+      transition:background .15s,color .15s,border-color .15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .nav-pill:hover { background:var(--surface2);color:var(--text);border-color:var(--blue); }
+
+    /* ── Key chip ────────────────────────────────────────── */
+    .chip { display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:1px 7px;font-size:.73rem;font-family:monospace;color:var(--text-mid); }
+    .ctrl-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+    .ctrl-row  { display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text-dim); }
+    .ctrl-row .chip { flex-shrink:0; }
+
+    /* ══════════════════════════════════════════════════════
+       GAME VIEW
+    ══════════════════════════════════════════════════════ */
+    #game-wrap {
+      position:fixed;inset:0;z-index:20;
+      display:none;flex-direction:column;
+      background:#000;
+    }
+    #game-wrap.show { display:flex; }
+
+    /* ── HUD bar ─────────────────────────────────────────── */
+    #hud {
+      position:absolute;
+      top:env(safe-area-inset-top,0);
+      left:0;right:0;height:48px;
+      display:flex;align-items:center;
+      padding:0 10px;gap:6px;
+      background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,transparent 100%);
+      z-index:30;
+    }
+    .hud-btn {
+      width:38px;height:38px;
+      background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);
+      border-radius:var(--radius-sm);color:#fff;font-size:1.05rem;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+      backdrop-filter:blur(8px);transition:background .1s;
+    }
+    .hud-btn:active { background:rgba(255,255,255,.22); }
+    #hud-title { flex:1;text-align:center;font-size:.76rem;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase; }
+
+    /* ── Canvas ──────────────────────────────────────────── */
+    #canvas {
+      flex:1;width:100%;display:block;
+      image-rendering:pixelated;image-rendering:crisp-edges;
+      object-fit:contain;background:#000;
+    }
+
+    /* ── Touch overlay ───────────────────────────────────── */
+    #touch-overlay { position:absolute;inset:0;pointer-events:none;z-index:25;display:none; }
+    #game-wrap.show-touch #touch-overlay { display:block; }
+
+    /* ══════════════════════════════════════════════════════
+       XBOX-STYLE CONTROLLER LAYOUT
+    ══════════════════════════════════════════════════════ */
+
+    /* Left side: D-pad + Left stick */
+    #ctrl-left {
+      position:absolute;
+      bottom:calc(env(safe-area-inset-bottom,0px) + 16px);
+      left:14px;
+      pointer-events:all;
+      display:flex;flex-direction:column;gap:10px;
+      align-items:center;
+    }
+
+    /* Bumpers / triggers row */
+    #ctrl-bumpers-left {
+      position:absolute;
+      top:calc(env(safe-area-inset-top,0px) + 52px);
+      left:10px;
+      pointer-events:all;
+      display:flex;flex-direction:column;gap:6px;
+    }
+    #ctrl-bumpers-right {
+      position:absolute;
+      top:calc(env(safe-area-inset-top,0px) + 52px);
+      right:10px;
+      pointer-events:all;
+      display:flex;flex-direction:column;gap:6px;
+    }
+    .trigger-btn {
+      width:56px;height:22px;
+      background:var(--xbox-lt);
+      border:1.5px solid rgba(255,255,255,.2);
+      border-radius:6px 6px 10px 10px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.55rem;font-weight:900;letter-spacing:.08em;
+      color:rgba(255,255,255,.65);
+      -webkit-tap-highlight-color:transparent;
+      touch-action:none;user-select:none;
+      backdrop-filter:blur(4px);
+      transition:background .07s,transform .07s;
+      text-transform:uppercase;
+    }
+    .trigger-btn.pressed { background:rgba(255,255,255,.25);transform:scaleY(.92); }
+    .bumper-btn {
+      width:56px;height:18px;
+      background:var(--xbox-sb);
+      border:1.5px solid rgba(255,255,255,.18);
+      border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.52rem;font-weight:900;letter-spacing:.08em;
+      color:rgba(255,255,255,.55);
+      -webkit-tap-highlight-color:transparent;
+      touch-action:none;user-select:none;
+      backdrop-filter:blur(4px);
+      transition:background .07s;
+      text-transform:uppercase;
+    }
+    .bumper-btn.pressed { background:rgba(255,255,255,.22); }
+
+    /* D-pad (Xbox cross style) */
+    #dpad {
+      width:148px;height:148px;
+      position:relative;
+      pointer-events:all;
+    }
+    .dp {
+      position:absolute;
+      background:rgba(30,30,60,.72);
+      border:2px solid rgba(255,255,255,.2);
+      display:flex;align-items:center;justify-content:center;
+      color:rgba(255,255,255,.8);
+      -webkit-tap-highlight-color:transparent;
+      touch-action:none;user-select:none;
+      backdrop-filter:blur(5px);
+      transition:background .07s,border-color .07s;
+    }
+    /* Xbox cross shape */
+    .dp-horiz { width:148px;height:44px;top:52px;left:0;border-radius:6px; }
+    .dp-vert  { width:44px;height:148px;top:0;left:52px;border-radius:6px; }
+    /* Directional arrow overlays */
+    .dp-arr {
+      position:absolute;width:44px;height:44px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1rem;color:rgba(255,255,255,.7);
+      pointer-events:none;z-index:2;
+    }
+    #dp-up-arr    { top:4px;left:52px; }
+    #dp-down-arr  { bottom:4px;left:52px; }
+    #dp-left-arr  { left:4px;top:52px; }
+    #dp-right-arr { right:4px;top:52px; }
+    /* Centre nub */
+    #dpad-center {
+      position:absolute;top:52px;left:52px;width:44px;height:44px;
+      background:rgba(20,20,40,.8);border:1.5px solid rgba(255,255,255,.1);
+      pointer-events:none;z-index:3;
+    }
+    .dp.pressed,
+    .dp-horiz.pressed,
+    .dp-vert.pressed  { background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.5); }
+
+    /* Touch hit zones (invisible, on top) */
+    .dp-hit {
+      position:absolute;
+      pointer-events:all;touch-action:none;user-select:none;
+      -webkit-tap-highlight-color:transparent;
+      z-index:10;
+    }
+    #dp-up    { width:44px;height:56px;top:0;left:52px; }
+    #dp-down  { width:44px;height:56px;bottom:0;left:52px; }
+    #dp-left  { width:56px;height:44px;top:52px;left:0; }
+    #dp-right { width:56px;height:44px;top:52px;right:0; }
+
+    /* Right side: ABXY buttons */
+    #ctrl-right {
+      position:absolute;
+      bottom:calc(env(safe-area-inset-bottom,0px) + 16px);
+      right:14px;
+      pointer-events:all;
+    }
+    #abxy-cluster {
+      width:148px;height:148px;
+      position:relative;
+    }
+    .abxy-btn {
+      position:absolute;
+      width:50px;height:50px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      flex-direction:column;
+      font-weight:900;font-size:.9rem;letter-spacing:.02em;
+      border:2.5px solid rgba(255,255,255,.25);
+      -webkit-tap-highlight-color:transparent;
+      touch-action:none;user-select:none;
+      backdrop-filter:blur(6px);
+      transition:transform .07s,filter .07s,border-color .07s;
+      color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);
+    }
+    .abxy-btn.pressed { transform:scale(.84);filter:brightness(1.7);border-color:rgba(255,255,255,.7); }
+    /* ABXY positions (Xbox layout) */
+    #btn-b { top:49px;right:0;     background:rgba(139,26,26,.7);  border-color:rgba(255,80,80,.5);  }  /* B = right */
+    #btn-a { bottom:0;right:49px;  background:rgba(45,122,45,.7);  border-color:rgba(80,200,80,.5);  }  /* A = bottom */
+    #btn-x { top:49px;left:0;     background:rgba(26,58,122,.7);  border-color:rgba(80,120,255,.5); }  /* X = left */
+    #btn-y { top:0;right:49px;    background:rgba(122,106,16,.7); border-color:rgba(220,190,40,.5); }  /* Y = top */
+    /* Letter labels */
+    .btn-label { font-size:.75rem;font-weight:900;line-height:1; }
+
+    /* Centre cluster: Start / Select / Guide */
+    #ctrl-center {
+      position:absolute;
+      bottom:calc(env(safe-area-inset-bottom,0px) + 72px);
+      left:50%;transform:translateX(-50%);
+      pointer-events:all;
+      display:flex;gap:14px;align-items:center;
+    }
+    .sys-btn {
+      height:30px;
+      background:rgba(30,30,60,.72);border:1.5px solid rgba(255,255,255,.18);
+      border-radius:20px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.55rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:rgba(255,255,255,.6);
+      -webkit-tap-highlight-color:transparent;
+      touch-action:none;user-select:none;
+      backdrop-filter:blur(5px);
+      transition:background .07s;
+      padding:0 12px;
+    }
+    .sys-btn.pressed { background:rgba(255,255,255,.2); }
+    #btn-guide {
+      width:40px;height:40px;border-radius:50%;padding:0;
+      background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);
+      font-size:1.1rem;
+    }
+    #btn-guide.pressed { background:rgba(255,255,255,.25); }
+
+    /* Keyboard hint */
+    #kb-hint {
+      position:absolute;bottom:calc(env(safe-area-inset-bottom,0px)+12px);
+      left:50%;transform:translateX(-50%);
+      font-size:.68rem;color:rgba(255,255,255,.3);white-space:nowrap;
+      letter-spacing:.04em;pointer-events:none;z-index:26;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       EXIT MODAL
+    ══════════════════════════════════════════════════════ */
+    #modal-bg { position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:50;display:none;align-items:center;justify-content:center; }
+    #modal-bg.show { display:flex; }
+    .modal { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:30px 26px;max-width:340px;width:90%;text-align:center; }
+    .modal h3 { font-size:1.05rem;font-weight:800;margin-bottom:9px; }
+    .modal p  { font-size:.83rem;color:var(--text-mid);margin-bottom:22px;line-height:1.5; }
+    .modal-btns { display:flex;gap:10px;justify-content:center; }
+    .mbtn { padding:11px 26px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:700;border:none;cursor:pointer;transition:opacity .15s;-webkit-tap-highlight-color:transparent; }
+    .mbtn:hover { opacity:.82; }
+    .mbtn-ghost   { background:var(--border);color:var(--text); }
+    .mbtn-primary { background:var(--blue);color:#fff; }
+
+    /* ── Scrollbar ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border);border-radius:3px; }
+
+    @media (max-width:480px) { .card { padding:16px; } }
+    @media (prefers-reduced-motion:reduce) { .ring-wrap,.ring-outer { animation:none; } }
+  </style>
+</head>
+<body>
+
+<div id="stars" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SPLASH / LAUNCHER
+══════════════════════════════════════════════════════════ -->
+<div id="splash">
+
+  <div class="hero">
+    <div class="ring-wrap">
+      <div class="ring-outer"><div class="ring-inner"></div></div>
+    </div>
+    <div class="hero-title">Sonic 1 <span class="accent">Forever</span></div>
+    <div class="hero-sub">Web Edition &nbsp;·&nbsp; v1.5.1</div>
+  </div>
+
+  <!-- Game data status -->
+  <div class="card">
+    <div class="card-label">Game Data</div>
+    <div class="data-status">
+      <div class="data-icon">✅</div>
+      <div>
+        <div class="data-name">Data.rsdk — bundled</div>
+        <div class="data-meta">38 MB · Sonic 1 Forever v1.5.1 · RSDK v4</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div id="prog-wrap">
+    <div id="prog-label">Loading…</div>
+    <div id="prog-track"><div id="prog-fill"></div></div>
+  </div>
+  <div id="error-msg"></div>
+
+  <!-- Launch -->
+  <button id="launch-btn">▶&nbsp; Play Sonic 1 Forever</button>
+
+  <!-- Nav pills -->
+  <div class="nav-pills" style="margin-top:12px">
+    <a class="nav-pill" href="directory.html">🗂 Mods &amp; Files</a>
+    <a class="nav-pill" href="offline.html">📴 Offline Mode</a>
+    <a class="nav-pill" href="README.md" target="_blank">📖 Readme</a>
+  </div>
+
+  <!-- Controls info -->
+  <div class="card">
+    <div class="card-label">Controls</div>
+    <div class="ctrl-grid">
+      <div class="ctrl-row"><span class="chip">← →</span> Move</div>
+      <div class="ctrl-row"><span class="chip">↑</span> Look up</div>
+      <div class="ctrl-row"><span class="chip">↓</span> Crouch / roll</div>
+      <div class="ctrl-row"><span class="chip">A / Z</span> Jump</div>
+      <div class="ctrl-row"><span class="chip">X / B</span> Spin dash</div>
+      <div class="ctrl-row"><span class="chip">Start</span> Pause</div>
+      <div class="ctrl-row"><span class="chip">Select</span> Back</div>
+      <div class="ctrl-row"><span class="chip">F</span> Fullscreen</div>
+    </div>
+    <div style="margin-top:12px;font-size:.78rem;color:var(--text-dim)">
+      📱 Mobile: Xbox-style on-screen controller appears automatically<br>
+      🎮 Gamepad: USB / Bluetooth Xbox controllers supported
+    </div>
+  </div>
+
+  <!-- Hosting Setup -->
+  <div class="card">
+    <div class="card-label">Hosting Setup</div>
+    <div style="font-size:.8rem;color:var(--text-dim);line-height:1.7">
+      Place <code style="color:var(--text-mid)">index.js</code> and <code style="color:var(--text-mid)">index.wasm</code> from
+      <a href="https://github.com/grubbyplaya/Sonic-1-WASM" target="_blank" style="color:var(--blue)">grubbyplaya/Sonic-1-WASM</a>
+      in this same folder.<br>
+      Serve with <code style="color:var(--text-mid)">python3 -m http.server 8000</code> or deploy to GitHub Pages / Netlify.<br>
+      <span style="color:var(--red);font-weight:700">✗</span> Cannot open via <code>file://</code> — requires HTTP/S.
+    </div>
+  </div>
+
+</div><!-- /splash -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     GAME VIEW
+══════════════════════════════════════════════════════════ -->
+<div id="game-wrap">
+
+  <div id="hud">
+    <button class="hud-btn" id="hud-back"  title="Exit to menu" aria-label="Exit">←</button>
+    <button class="hud-btn" id="hud-pause" title="Pause"        aria-label="Pause">⏸</button>
+    <div id="hud-title">Sonic 1 Forever</div>
+    <button class="hud-btn" id="hud-mute"  title="Toggle mute"  aria-label="Mute">🔊</button>
+    <button class="hud-btn" id="hud-full"  title="Fullscreen"   aria-label="Fullscreen">⛶</button>
+  </div>
+
+  <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="0"></canvas>
+  <div id="kb-hint" aria-hidden="true">Arrows · A Jump · X Spin · Start Pause · Esc Back · F Fullscreen</div>
+
+  <!-- ════ Xbox-Style Touch Controller ════ -->
+  <div id="touch-overlay" aria-hidden="true">
+
+    <!-- Left trigger + bumper -->
+    <div id="ctrl-bumpers-left">
+      <div class="trigger-btn" id="btn-lt" data-key="q">LT</div>
+      <div class="bumper-btn"  id="btn-lb" data-key="e">LB</div>
+    </div>
+
+    <!-- Right trigger + bumper -->
+    <div id="ctrl-bumpers-right">
+      <div class="trigger-btn" id="btn-rt" data-key="r">RT</div>
+      <div class="bumper-btn"  id="btn-rb" data-key="t">RB</div>
+    </div>
+
+    <!-- Left side: D-pad -->
+    <div id="ctrl-left">
+      <div id="dpad">
+        <!-- Visual cross arms -->
+        <div class="dp dp-horiz"></div>
+        <div class="dp dp-vert"></div>
+        <!-- Direction arrows (visual only) -->
+        <div class="dp-arr" id="dp-up-arr">▲</div>
+        <div class="dp-arr" id="dp-down-arr">▼</div>
+        <div class="dp-arr" id="dp-left-arr">◀</div>
+        <div class="dp-arr" id="dp-right-arr">▶</div>
+        <!-- Centre nub -->
+        <div id="dpad-center"></div>
+        <!-- Hit zones -->
+        <div class="dp-hit" id="dp-up"    data-key="ArrowUp"></div>
+        <div class="dp-hit" id="dp-down"  data-key="ArrowDown"></div>
+        <div class="dp-hit" id="dp-left"  data-key="ArrowLeft"></div>
+        <div class="dp-hit" id="dp-right" data-key="ArrowRight"></div>
+      </div>
+    </div>
+
+    <!-- Centre: Select · Guide · Start -->
+    <div id="ctrl-center">
+      <div class="sys-btn" id="btn-select" data-key="Escape">SELECT</div>
+      <div class="sys-btn" id="btn-guide"  data-action="fullscreen">⊞</div>
+      <div class="sys-btn" id="btn-start"  data-key="Enter">START</div>
+    </div>
+
+    <!-- Right side: ABXY cluster -->
+    <div id="ctrl-right">
+      <div id="abxy-cluster">
+        <div class="abxy-btn" id="btn-y" data-key="y"><span class="btn-label">Y</span></div>
+        <div class="abxy-btn" id="btn-x" data-key="x"><span class="btn-label">X</span></div>
+        <div class="abxy-btn" id="btn-b" data-key="b"><span class="btn-label">B</span></div>
+        <div class="abxy-btn" id="btn-a" data-key="z"><span class="btn-label">A</span></div>
+      </div>
+    </div>
+
+  </div><!-- /touch-overlay -->
+</div><!-- /game-wrap -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     EXIT MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <h3 id="modal-title">Exit to Menu?</h3>
+    <p>Progress since your last in-game save will be lost.</p>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-ghost"   id="modal-stay">Keep Playing</button>
+      <button class="mbtn mbtn-primary" id="modal-exit">Exit</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   Sonic 1 Forever — Web Launcher  (web.html)
+   Requires in same folder: index.js  index.wasm  Data.rsdk
+════════════════════════════════════════════════════════════ */
+
+const $ = id => document.getElementById(id);
+const splash    = $('splash');
+const gameWrap  = $('game-wrap');
+const launchBtn = $('launch-btn');
+const progWrap  = $('prog-wrap');
+const progFill  = $('prog-fill');
+const progLabel = $('prog-label');
+const errorMsg  = $('error-msg');
+const canvas    = $('canvas');
+const kbHint    = $('kb-hint');
+const modalBg   = $('modal-bg');
+
+let muted = false;
+let isTouchDevice = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+const activeKeys  = new Set();
+
+// ── Touch mode ──────────────────────────────────────────────
+function applyTouchMode() {
+  gameWrap.classList.toggle('show-touch', isTouchDevice);
+  kbHint.style.display = isTouchDevice ? 'none' : '';
+}
+applyTouchMode();
+window.addEventListener('touchstart', () => {
+  isTouchDevice = true; applyTouchMode();
+}, { once: true });
+
+// ── Launch ──────────────────────────────────────────────────
+launchBtn.addEventListener('click', startGame);
+
+async function startGame() {
+  launchBtn.disabled = true;
+  errorMsg.textContent = '';
+  progWrap.classList.add('show');
+
+  try {
+    setProgress(8, 'Fetching Data.rsdk…');
+    const rsdkBuf = await fetchWithProgress(
+      'Data.rsdk',
+      p => setProgress(8 + p * 52, `Downloading Data.rsdk… ${Math.round(p * 100)}%`)
+    );
+
+    splash.style.transition = 'opacity .4s';
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.classList.add('hidden');
+      gameWrap.classList.add('show');
+      canvas.focus();
+    }, 420);
+
+    setProgress(64, 'Loading engine…');
+    await loadScript('index.js');
+
+    setProgress(80, 'Initialising WASM…');
+    window.Module = buildModule(rsdkBuf);
+
+    setProgress(90, 'Writing game data…');
+    await waitForFS();
+    writeRSDK(rsdkBuf);
+
+    setProgress(100, 'Starting…');
+    await delay(300);
+    progWrap.style.opacity = '0';
+
+  } catch (err) {
+    console.error(err);
+    showError(err.message || String(err));
+  }
+}
+
+async function fetchWithProgress(url, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(
+    `Could not load "${url}" (HTTP ${res.status}).\n` +
+    `Ensure it is in the same folder and you are serving over HTTP/S.`
+  );
+  const total  = Number(res.headers.get('content-length') || 0);
+  const reader = res.body.getReader();
+  const chunks = [];
+  let received = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    if (total) onProgress(received / total);
+  }
+  const out = new Uint8Array(received);
+  let off = 0;
+  for (const c of chunks) { out.set(c, off); off += c.length; }
+  return out.buffer;
+}
+
+function setProgress(pct, label) {
+  progFill.style.width = pct + '%';
+  progLabel.textContent = label;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload  = res;
+    s.onerror = () => rej(new Error(
+      `Could not load "${src}".\n\nDownload index.js and index.wasm from:\nhttps://github.com/grubbyplaya/Sonic-1-WASM`
+    ));
+    document.head.appendChild(s);
+  });
+}
+
+function buildModule(rsdkBuf) {
+  return {
+    canvas,
+    noInitialRun: false,
+    arguments: [],
+    print:    (...a) => console.log('[RSDK]', ...a),
+    printErr: (...a) => console.warn('[RSDK]', ...a),
+    setStatus(text) {
+      if (text) setProgress(
+        (progFill.offsetWidth / progFill.parentElement.offsetWidth) * 100, text
+      );
+    },
+    onAbort(w) { showError('Engine abort: ' + w); },
+    onRuntimeInitialized() { console.log('[RSDK] Runtime ready'); },
+    locateFile(path, prefix) { return prefix + path; },
+    preRun: [() => {
+      try {
+        const FS = window.Module.FS || window.FS;
+        FS.writeFile('/Data.rsdk', new Uint8Array(rsdkBuf));
+      } catch (e) { /* retry via waitForFS */ }
+    }],
+  };
+}
+
+async function waitForFS() {
+  for (let i = 0; i < 120; i++) {
+    if (window.Module?.FS) return;
+    await delay(100);
+  }
+}
+
+function writeRSDK(buf) {
+  try {
+    window.Module.FS.writeFile('/Data.rsdk', new Uint8Array(buf));
+    console.log('[RSDK] /Data.rsdk written OK');
+  } catch (e) {
+    console.warn('[RSDK] FS write (may already exist):', e.message);
+  }
+}
+
+function showError(msg) {
+  splash.classList.remove('hidden');
+  splash.style.opacity = '1';
+  gameWrap.classList.remove('show');
+  progWrap.classList.remove('show');
+  progFill.style.width = '0%';
+  progWrap.style.opacity = '1';
+  launchBtn.disabled = false;
+  launchBtn.textContent = '▶  Retry';
+  errorMsg.textContent = '❌ ' + msg;
+}
+
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// ── Virtual key dispatch ─────────────────────────────────────
+// Maps key names → KeyboardEvent codes
+const KEY_CODE = {
+  ArrowUp:'ArrowUp', ArrowDown:'ArrowDown',
+  ArrowLeft:'ArrowLeft', ArrowRight:'ArrowRight',
+  Enter:'Enter', Escape:'Escape',
+  z:'KeyZ', x:'KeyX', b:'KeyB', y:'KeyY',
+  q:'KeyQ', e:'KeyE', r:'KeyR', t:'KeyT',
+};
+
+function fireKey(key, down) {
+  const opts = {
+    key, code: KEY_CODE[key] || ('Key' + key.toUpperCase()),
+    bubbles: true, cancelable: true
+  };
+  canvas.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', opts));
+  document.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', opts));
+}
+
+// ── Wire a touch button ──────────────────────────────────────
+function wireBtn(el) {
+  const key    = el.dataset.key;
+  const action = el.dataset.action;
+
+  const press = () => {
+    el.classList.add('pressed');
+    if (action === 'fullscreen') { toggleFullscreen(); return; }
+    if (!key || activeKeys.has(key)) return;
+    activeKeys.add(key);
+    fireKey(key, true);
+  };
+  const release = () => {
+    el.classList.remove('pressed');
+    if (!key || !activeKeys.has(key)) return;
+    activeKeys.delete(key);
+    fireKey(key, false);
+  };
+
+  el.addEventListener('touchstart',  e => { e.preventDefault(); press();   }, { passive: false });
+  el.addEventListener('touchend',    e => { e.preventDefault(); release(); }, { passive: false });
+  el.addEventListener('touchcancel', e => { e.preventDefault(); release(); }, { passive: false });
+  el.addEventListener('mousedown',   e => { e.preventDefault(); press();   });
+  el.addEventListener('mouseup',     e => { e.preventDefault(); release(); });
+  el.addEventListener('mouseleave',  ()  => release());
+}
+
+// Wire all buttons with data-key or data-action
+document.querySelectorAll('[data-key],[data-action]').forEach(wireBtn);
+
+// ── D-pad slide gesture ──────────────────────────────────────
+(function() {
+  const dpadEl = $('dpad');
+  const hitMap = {
+    'dp-up':    'ArrowUp',
+    'dp-down':  'ArrowDown',
+    'dp-left':  'ArrowLeft',
+    'dp-right': 'ArrowRight',
+  };
+  const visualMap = {
+    'ArrowUp':    'dp-up-arr',
+    'ArrowDown':  'dp-down-arr',
+    'ArrowLeft':  'dp-left-arr',
+    'ArrowRight': 'dp-right-arr',
+  };
+  let activeDir = null;
+
+  function getDir(x, y) {
+    const r  = dpadEl.getBoundingClientRect();
+    const dx = x - r.left  - r.width  / 2;
+    const dy = y - r.top   - r.height / 2;
+    if (Math.hypot(dx, dy) < 16) return null;
+    const a = Math.atan2(dy, dx) * 180 / Math.PI;
+    if (a > -135 && a <= -45)  return 'dp-up';
+    if (a >  -45 && a <=  45)  return 'dp-right';
+    if (a >   45 && a <= 135)  return 'dp-down';
+    return 'dp-left';
+  }
+
+  function setDir(d) {
+    if (d === activeDir) return;
+    if (activeDir) {
+      const k = hitMap[activeDir];
+      activeKeys.delete(k);
+      const arrEl = $(visualMap[k]);
+      if (arrEl) arrEl.style.opacity = '';
+      fireKey(k, false);
+    }
+    activeDir = d;
+    if (d) {
+      const k = hitMap[d];
+      activeKeys.add(k);
+      const arrEl = $(visualMap[k]);
+      if (arrEl) arrEl.style.opacity = '1';
+      fireKey(k, true);
+    }
+  }
+
+  dpadEl.addEventListener('touchstart', e => {
+    e.preventDefault();
+    setDir(getDir(e.touches[0].clientX, e.touches[0].clientY));
+  }, { passive: false });
+
+  dpadEl.addEventListener('touchmove', e => {
+    e.preventDefault();
+    setDir(getDir(e.touches[0].clientX, e.touches[0].clientY));
+  }, { passive: false });
+
+  dpadEl.addEventListener('touchend',   () => setDir(null));
+  dpadEl.addEventListener('touchcancel',() => setDir(null));
+})();
+
+// ── HUD wiring ───────────────────────────────────────────────
+$('hud-full' ).addEventListener('click', toggleFullscreen);
+$('hud-mute' ).addEventListener('click', toggleMute);
+$('hud-pause').addEventListener('click', () => {
+  fireKey('Enter', true); setTimeout(() => fireKey('Enter', false), 80);
+});
+$('hud-back').addEventListener('click', () => modalBg.classList.add('show'));
+
+$('modal-stay').addEventListener('click', () => modalBg.classList.remove('show'));
+$('modal-exit').addEventListener('click', () => {
+  modalBg.classList.remove('show');
+  try { window.Module?.SDL?.audioContext?.close(); } catch (_) {}
+  gameWrap.classList.remove('show');
+  splash.classList.remove('hidden');
+  splash.style.opacity = '1';
+  launchBtn.disabled = false;
+  launchBtn.textContent = '▶  Play Again';
+  progWrap.classList.remove('show');
+  progFill.style.width = '0%';
+  progWrap.style.opacity = '1';
+  document.querySelector('script[src="index.js"]')?.remove();
+  delete window.Module;
+});
+
+// F key → fullscreen
+document.addEventListener('keydown', e => {
+  if ((e.key === 'f' || e.key === 'F') && gameWrap.classList.contains('show'))
+    toggleFullscreen();
+});
+
+function toggleFullscreen() {
+  const btn = $('hud-full');
+  if (!document.fullscreenElement) {
+    (gameWrap.requestFullscreen || gameWrap.webkitRequestFullscreen || gameWrap.mozRequestFullScreen)
+      .call(gameWrap).then(() => btn.textContent = '⊡').catch(() => {});
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen)
+      .call(document).then(() => btn.textContent = '⛶').catch(() => {});
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  $('hud-full').textContent = document.fullscreenElement ? '⊡' : '⛶';
+});
+
+function toggleMute() {
+  muted = !muted;
+  $('hud-mute').textContent = muted ? '🔇' : '🔊';
+  const ctx = window.Module?.SDL?.audioContext;
+  if (ctx) (muted ? ctx.suspend() : ctx.resume()).catch(() => {});
+}
+
+// Audio context unlock
+const unlockAudio = () => {
+  if (window.Module?.SDL?.audioContext?.state === 'suspended')
+    window.Module.SDL.audioContext.resume().catch(() => {});
+};
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click',      unlockAudio, { once: true });
+
+// Block scroll during gameplay
+window.addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key) &&
+      gameWrap.classList.contains('show')) {
+    e.preventDefault();
+  }
+});
+
+// Encourage landscape on mobile
+window.screen?.orientation?.lock?.('landscape').catch(() => {});
+
+// Gamepad API — maps gamepad buttons to keyboard events
+(function gamepadLoop() {
+  const GP_MAP = {
+    0: 'z',        // A → Jump
+    1: 'x',        // B → Spin
+    2: 'x',        // X → Spin
+    3: 'y',        // Y
+    8: 'Escape',   // Select/Back
+    9: 'Enter',    // Start
+    12: 'ArrowUp',
+    13: 'ArrowDown',
+    14: 'ArrowLeft',
+    15: 'ArrowRight',
+  };
+  const gpActive = new Set();
+
+  function poll() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (const pad of pads) {
+      if (!pad) continue;
+      pad.buttons.forEach((btn, i) => {
+        const key = GP_MAP[i];
+        if (!key) return;
+        if (btn.pressed && !gpActive.has(i)) {
+          gpActive.add(i); fireKey(key, true);
+        } else if (!btn.pressed && gpActive.has(i)) {
+          gpActive.delete(i); fireKey(key, false);
+        }
+      });
+      // Left stick
+      const lx = pad.axes[0], ly = pad.axes[1];
+      const DEAD = 0.35;
+      const wantL = lx < -DEAD, wantR = lx > DEAD, wantU = ly < -DEAD, wantD = ly > DEAD;
+      [['sl','ArrowLeft',wantL],['sr','ArrowRight',wantR],['su','ArrowUp',wantU],['sd','ArrowDown',wantD]]
+        .forEach(([id, k, want]) => {
+          if (want && !gpActive.has(id))  { gpActive.add(id);    fireKey(k, true);  }
+          if (!want && gpActive.has(id))  { gpActive.delete(id); fireKey(k, false); }
+        });
+    }
+    requestAnimationFrame(poll);
+  }
+  requestAnimationFrame(poll);
+})();
+</script>
+</body>
+</html>
